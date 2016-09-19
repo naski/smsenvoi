@@ -1,0 +1,22 @@
+{
+    "name": "naski/smsenvoi",
+    "description": "API PHP 7 pour Sms Envoi",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Stéphane Wouters",
+            "email": "stephane@doelia.fr"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "SmsEnvoi\\": "src/classes/"
+        }
+    },
+    "require": {
+        "php": ">=7.0.0",
+        "curl/curl": "^1.4"
+    },
+    "require-dev": {
+    }
+}
