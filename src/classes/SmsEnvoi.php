@@ -44,18 +44,25 @@ class SmsEnvoi
      */
     public $id;
 
-    public function __construct($email, $api_key)
+
+    private $config_email;
+    private $config_api_key;
+
+    public function __construct(string $email = '', string $api_key = '')
     {
-        define('SMSENVOI_EMAIL', $email);
-        define('SMSENVOI_APIKEY', $api_key);
-        define('SMSENVOI_VERSION','3.0.4');
+        if (!$email || !$api_key) {
+            throw new \Exception('SMSEnvoi : Mauvaise configuration (email ou api_key manquante).');
+        }
+
+        $this->config_email = $email;
+        $this->config_api_key = $api_key;
     }
 
     private function _postRequest($url, $fields)
     {
-        $fields['email'] = SMSENVOI_EMAIL;
-        $fields['apikey'] = SMSENVOI_APIKEY;
-        $fields['version'] = SMSENVOI_VERSION;
+        $fields['email'] = $this->config_email;
+        $fields['apikey'] = $this->config_api_key;
+        $fields['version'] = '3.0.4';
 
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_HEADER, 0);
@@ -87,12 +94,9 @@ class SmsEnvoi
     public function sendSMS($recipients, $content, $subtype = 'PREMIUM', $senderlabel = 'SMS ENVOI', $senddate = '', $sendtime = '', $richsms_option = '', $richsms_url = '')
     {
         if (substr_count($recipients, ',') > 1000) {
-            if ($this->debug) {
-                echo '1000 destinataires maximum par requête';
-            }
-
-            return false;
+            throw new \Exception('1000 destinataires maximum par requête');
         }
+
         $fields['message']['recipients'] = $recipients;
         $fields['message']['content'] = $content;
         $fields['message']['subtype'] = $subtype;
@@ -109,21 +113,18 @@ class SmsEnvoi
             $fields['shorturl']['url'] = $richsms_url;
         }
 
-        $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/sendsms/', Sms);
+        $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/sendsms/', $fields);
 
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
 
         if (isset($this->result->success) && ($this->result->success == 1)) {
-            $this->success = true;
             $this->id = $this->result->message_id;
+            $this->success = true;
         } else {
             $this->success = false;
         }
 
-        return $this->success;
+        return $this->result;
     }
 
     /**
@@ -137,11 +138,7 @@ class SmsEnvoi
     public function sendCALL($recipients, $content, $senddate = '', $sendtime = '')
     {
         if (substr_count($recipients, ',') > 1000) {
-            if ($this->debug) {
-                echo '1000 destinataires maximum par requête';
-            }
-
-            return false;
+            throw new \Exception('1000 destinataires maximum par requête');
         }
         $fields['message']['recipients'] = $recipients;
         $fields['message']['content'] = $content;
@@ -156,9 +153,6 @@ class SmsEnvoi
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/sendcall/', $fields);
 
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
 
         if (isset($this->result->success) && ($this->result->success == 1)) {
             $this->success = true;
@@ -167,7 +161,7 @@ class SmsEnvoi
             $this->success = false;
         }
 
-        return $this->success;
+        return $this->result;
     }
 
     /**
@@ -184,11 +178,7 @@ class SmsEnvoi
     public function sendCobrandingSMS($cobrandingmember_id, $recipients, $content, $subtype = 'PREMIUM', $senderlabel = 'SMS ENVOI', $senddate = '', $sendtime = '')
     {
         if (substr_count($recipients, ',') > 1000) {
-            if ($this->debug) {
-                echo '1000 destinataires maximum par requête';
-            }
-
-            return false;
+            throw new \Exception('1000 destinataires maximum par requête');
         }
         $fields['cobrandingmember_id'] = $cobrandingmember_id;
         $fields['message']['recipients'] = $recipients;
@@ -206,22 +196,15 @@ class SmsEnvoi
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/sendsms/', $fields);
 
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
 
         if (isset($this->result->success) && ($this->result->success == 1)) {
             $this->success = true;
             $this->id = $this->result->message_id;
         } else {
             $this->success = false;
-
-            if ($this->debug) {
-                echo $this->result->message;
-            }
         }
 
-        return $this->success;
+        return $this->result;
     }
 
     /**
@@ -234,10 +217,6 @@ class SmsEnvoi
         $fields['message_id'] = $message_id;
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/checkdelivery/', $fields);
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
-
         return $this->result->listing;
     }
 
@@ -257,10 +236,6 @@ class SmsEnvoi
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/checkstops/', $fields);
 
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
-
         return $this->result->stops;
     }
 
@@ -280,9 +255,6 @@ class SmsEnvoi
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/addstop/', $fields);
 
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
 
         return $this->result->success;
     }
@@ -368,9 +340,6 @@ class SmsEnvoi
         }
         $this->rawresult = $this->_postRequest('http://www.smsenvoi.com/httpapi/createcobrandingmember/', $fields);
         $this->result = json_decode($this->rawresult);
-        if ($this->debug && (isset($this->result->message))) {
-            echo $this->result->message;
-        }
 
         if ($this->result->success != 1) {
             return false;
